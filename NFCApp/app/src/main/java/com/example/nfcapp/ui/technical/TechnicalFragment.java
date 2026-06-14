@@ -39,13 +39,11 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class TechnicalFragment extends Fragment {
-
     private AppPreferences prefs;
     private KeyManager keyManager;
     private ChallengeSigner signer;
     private ExecutorService executor;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-
     private TextView logOutput;
     private ScrollView logScroll;
 
@@ -75,13 +73,10 @@ public class TechnicalFragment extends Fragment {
         view.findViewById(R.id.btnExport).setOnClickListener(v -> exportHex());
         view.findViewById(R.id.btnClearLog).setOnClickListener(v -> logOutput.setText(""));
     }
-
     private void log(String text) {
         logOutput.setText(text);
         logScroll.post(() -> logScroll.fullScroll(View.FOCUS_DOWN));
     }
-
-    // ═════════════════ DETALII CHEIE ═════════════════
     private void showKeyDetails() {
         try {
             if (!keyManager.keyExists()) {
@@ -94,21 +89,21 @@ public class TechnicalFragment extends Fragment {
             byte[] encoded = pub.getEncoded();
 
             StringBuilder sb = new StringBuilder();
-            sb.append("═══ CHEIE CRIPTOGRAFICA ═══\n\n");
+            sb.append("CHEIE CRIPTOGRAFICA\n\n");
             sb.append("Algoritm: ").append(pub.getAlgorithm()).append("\n");
             sb.append("Curba: secp256r1 (P-256)\n");
             sb.append("Format cheie publica: ").append(pub.getFormat()).append("\n");
             sb.append("Lungime encoded: ").append(encoded.length).append(" bytes\n\n");
 
-            sb.append("KeyId (SHA-256[0..16] al cheii publice):\n");
+            sb.append("KeyId:\n");
             sb.append(HexUtils.bytesToHex(keyId)).append("\n\n");
 
             sb.append("Cheia privata: stocata in TEE/StrongBox\n");
-            sb.append("  → ").append(keyManager.getPrivateKey().getFormat() == null
+            sb.append("  - ").append(keyManager.getPrivateKey().getFormat() == null
                     ? "NU poate fi extrasa din hardware (format=null)"
                     : "Format vizibil — software fallback").append("\n\n");
 
-            sb.append("═══ LANT ATESTARE (").append(chain.length).append(" certificate) ═══\n\n");
+            sb.append("LANT ATESTARE (").append(chain.length).append(" certificate)\n\n");
             for (int i = 0; i < chain.length; i++) {
                 X509Certificate x = (X509Certificate) chain[i];
                 sb.append("[").append(i).append("] ").append(x.getSubjectDN().getName()).append("\n");
@@ -120,8 +115,6 @@ public class TechnicalFragment extends Fragment {
             log("Eroare:\n" + e);
         }
     }
-
-    // ═════════════════ SIMULARE NFC TAP ═════════════════
     private void simulateNfcTap() {
         try {
             if (!keyManager.keyExists()) {
@@ -130,21 +123,20 @@ public class TechnicalFragment extends Fragment {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("═══ SIMULARE TAP NFC (flow APDU complet) ═══\n\n");
+            sb.append("SIMULARE TAP NFC\n\n");
             sb.append("Instantiem service-ul HCE direct si-i trimitem\n");
             sb.append("APDU-uri identice cu cele de pe PN532.\n\n");
 
             AccessHceService service = new AccessHceService();
 
-            // ═════ 1. SELECT AID ═════
             byte[] selectApdu = new byte[]{
                     0x00, (byte) 0xA4, 0x04, 0x00, 0x07,
                     (byte) 0xF0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06
             };
-            sb.append("─── [1] SELECT AID ───\n");
-            sb.append("→ ").append(HexUtils.bytesToHex(selectApdu)).append("\n");
+            sb.append("[1] SELECT AID\n");
+            sb.append("-> ").append(HexUtils.bytesToHex(selectApdu)).append("\n");
             byte[] resp1 = service.processCommandApdu(selectApdu, null);
-            sb.append("← ").append(HexUtils.bytesToHex(resp1)).append("\n\n");
+            sb.append("<- ").append(HexUtils.bytesToHex(resp1)).append("\n\n");
 
             // ═════ 2. GET CHALLENGE ═════
             byte[] nonce = new byte[32];
@@ -157,14 +149,13 @@ public class TechnicalFragment extends Fragment {
             getChallengeApdu[4] = 0x20;
             System.arraycopy(nonce, 0, getChallengeApdu, 5, 32);
 
-            sb.append("─── [2] GET CHALLENGE ───\n");
+            sb.append("[2] GET CHALLENGE\n");
             sb.append("Nonce: ").append(HexUtils.bytesToHex(nonce)).append("\n");
             byte[] resp2 = service.processCommandApdu(getChallengeApdu, null);
             byte[] keyId = Arrays.copyOfRange(resp2, 0, resp2.length - 2);
-            sb.append("← KeyId: ").append(HexUtils.bytesToHex(keyId)).append("\n");
-            sb.append("← SW: 9000\n\n");
+            sb.append("<- KeyId: ").append(HexUtils.bytesToHex(keyId)).append("\n");
+            sb.append("<- SW: 9000\n\n");
 
-            // ═════ 3. SIGN CHALLENGE ═════
             int doorId = 1;
             byte action = ChallengeSigner.ACTION_OPEN_DOOR;
             byte[] message = ChallengeSigner.buildMessage(nonce, doorId, action);
@@ -177,18 +168,17 @@ public class TechnicalFragment extends Fragment {
             signApdu[4] = (byte) message.length;
             System.arraycopy(message, 0, signApdu, 5, message.length);
 
-            sb.append("─── [3] SIGN CHALLENGE ───\n");
+            sb.append("[3] SIGN CHALLENGE\n");
             sb.append("Mesaj (").append(message.length).append("B): ").append(HexUtils.bytesToHex(message)).append("\n");
             long t0 = System.nanoTime();
             byte[] resp3 = service.processCommandApdu(signApdu, null);
             long elapsedMs = (System.nanoTime() - t0) / 1_000_000;
 
             byte[] signature = Arrays.copyOfRange(resp3, 0, resp3.length - 2);
-            sb.append("← Semnatura (").append(signature.length).append("B): ").append(HexUtils.bytesToHex(signature)).append("\n");
-            sb.append("← Timp procesare: ").append(elapsedMs).append(" ms\n\n");
+            sb.append("<- Semnatura (").append(signature.length).append("B): ").append(HexUtils.bytesToHex(signature)).append("\n");
+            sb.append("<- Timp procesare: ").append(elapsedMs).append(" ms\n\n");
 
-            // ═════ 4. Verificare locala ═════
-            sb.append("─── [4] Verificare locala (simuleaza ESP32) ───\n");
+            sb.append("[4] Verificare locala\n");
             boolean valid = signer.verifyLocally(message, signature);
             sb.append("Rezultat: ").append(valid ? "VALID" : "INVALID").append("\n");
 
@@ -198,7 +188,6 @@ public class TechnicalFragment extends Fragment {
         }
     }
 
-    // ═════════════════ TEST ATAC ═════════════════
     private void testAttack() {
         if (!keyManager.keyExists()) {
             log("Cheia nu exista.");
@@ -209,19 +198,17 @@ public class TechnicalFragment extends Fragment {
 
         executor.execute(() -> {
             StringBuilder sb = new StringBuilder();
-            sb.append("═══ TESTE DE ATAC IMPOTRIVA ESP32 ═══\n\n");
+            sb.append("TESTE DE ATAC IMPOTRIVA ESP32\n\n");
 
             try {
-                // ─── Atac 1: Semnatura tampered ───
-                sb.append("─── [1] Semnatura MODIFICATA ───\n");
+                sb.append("[1] Semnatura MODIFICATA\n");
                 sb.append("Cer challenge, semnez corect, dar modific 1 byte\n");
                 sb.append("din semnatura inainte sa o trimit.\n");
                 sb.append("Asteptat: ESP32 respinge cu 'signature_invalid'.\n\n");
                 String r1 = sendOpenWithTamper(url, true, false, false);
                 sb.append("Rezultat: ").append(r1).append("\n\n");
 
-                // ─── Atac 2: Door ID gresit ───
-                sb.append("─── [2] Door ID gresit ───\n");
+                sb.append("[2] Door ID gresit\n");
                 sb.append("Cer challenge, construiesc mesaj cu door_id=99\n");
                 sb.append("in loc de 1, semnez corect.\n");
                 sb.append("Asteptat: ESP32 respinge cu 'wrong_door_id'.\n");
@@ -229,8 +216,7 @@ public class TechnicalFragment extends Fragment {
                 String r2 = sendOpenWithTamper(url, false, true, false);
                 sb.append("Rezultat: ").append(r2).append("\n\n");
 
-                // ─── Atac 3: Replay ───
-                sb.append("─── [3] Replay attack ───\n");
+                sb.append("[3] Replay attack\n");
                 sb.append("Fac o cerere valida, apoi retrimit EXACT acelasi\n");
                 sb.append("payload (mesaj+semnatura) ca un atacator care a\n");
                 sb.append("capturat traficul prin sniffing.\n");
@@ -238,7 +224,7 @@ public class TechnicalFragment extends Fragment {
                 String r3 = sendReplayAttack(url);
                 sb.append("Rezultat: ").append(r3).append("\n\n");
 
-                sb.append("═══ Concluzie ═══\n");
+                sb.append("Concluzie\n");
                 sb.append("Toate atacurile au fost respinse — protocolul rezista.\n");
 
             } catch (Exception e) {
@@ -265,7 +251,7 @@ public class TechnicalFragment extends Fragment {
         byte[] sig = signer.sign(msg);
 
         if (tamperSig) {
-            // Flip ultimul byte
+            //flip ultimul byte
             sig[sig.length - 1] ^= 0x01;
         }
 
@@ -283,7 +269,6 @@ public class TechnicalFragment extends Fragment {
     }
 
     private String sendReplayAttack(String url) throws Exception {
-        // 1. Trimite o cerere valida mai intai
         OkHttpClient http = buildHttp();
         Request chReq = new Request.Builder().url(url + "/api/challenge").get().build();
         byte[] nonce;
@@ -304,14 +289,12 @@ public class TechnicalFragment extends Fragment {
         String payloadStr = payload.toString();
         RequestBody body = RequestBody.create(payloadStr, MediaType.parse("application/json"));
 
-        // Prima cerere — ar trebui acceptata
         Request opReq1 = new Request.Builder().url(url + "/api/open").post(body).build();
         String first;
         try (Response r = http.newCall(opReq1).execute()) {
             first = "Prima: HTTP " + r.code() + " · " + r.body().string();
         }
 
-        // A doua cerere IDENTICA — replay attack
         RequestBody body2 = RequestBody.create(payloadStr, MediaType.parse("application/json"));
         Request opReq2 = new Request.Builder().url(url + "/api/open").post(body2).build();
         String second;
@@ -329,7 +312,6 @@ public class TechnicalFragment extends Fragment {
                 .build();
     }
 
-    // ═════════════════ EXPORT HEX ═════════════════
     private void exportHex() {
         try {
             if (!keyManager.keyExists()) {
@@ -344,17 +326,16 @@ public class TechnicalFragment extends Fragment {
             boolean valid = signer.verifyLocally(message, signature);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("═══ EXPORT PENTRU ESP32 ═══\n");
-            sb.append("(util pentru hardcoding cheie sau debug)\n\n");
+            sb.append("EXPORT PENTRU ESP32\n");
             sb.append("Sanity check local: ").append(valid ? "VALID" : "INVALID").append("\n\n");
 
-            sb.append("─── [1/3] CHEIA PUBLICA (").append(publicKeyDer.length).append(" bytes) ───\n");
+            sb.append("CHEIA PUBLICA (").append(publicKeyDer.length).append(" bytes)\n");
             sb.append(HexUtils.bytesToHex(publicKeyDer)).append("\n\n");
 
-            sb.append("─── [2/3] MESAJUL (").append(message.length).append(" bytes) ───\n");
+            sb.append("MESAJUL (").append(message.length).append(" bytes)\n");
             sb.append(HexUtils.bytesToHex(message)).append("\n\n");
 
-            sb.append("─── [3/3] SEMNATURA (").append(signature.length).append(" bytes) ───\n");
+            sb.append("SEMNATURA (").append(signature.length).append(" bytes)\n");
             sb.append(HexUtils.bytesToHex(signature)).append("\n\n");
 
 

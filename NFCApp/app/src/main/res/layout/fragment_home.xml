@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Header: nume aplicatie -->
         <TextView
             android:id="@+id/appTitle"
             android:layout_width="0dp"
@@ -31,7 +30,7 @@
             android:id="@+id/appSubtitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Control acces cu autentificare neclonabila"
+            android:text=""
             android:textSize="13sp"
             android:textColor="#757575"
             android:gravity="center"
@@ -40,7 +39,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Card de status -->
         <LinearLayout
             android:id="@+id/statusCard"
             android:layout_width="385dp"
@@ -95,10 +93,6 @@
                 android:textSize="12sp" />
 
         </LinearLayout>
-
-        <!-- Buton principal -->
-
-        <!-- Card rezultat ultima cerere -->
 
         <Button
             android:id="@+id/btnOpenDoor"

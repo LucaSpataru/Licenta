@@ -63,7 +63,6 @@ public class HomeFragment extends Fragment {
         signer = new ChallengeSigner(keyManager);
         executor = Executors.newSingleThreadExecutor();
 
-        // Bind views
         statusDot = view.findViewById(R.id.statusDot);
         statusText = view.findViewById(R.id.statusText);
         serverInfoText = view.findViewById(R.id.serverInfoText);
@@ -76,20 +75,17 @@ public class HomeFragment extends Fragment {
 
         btnOpenDoor.setOnClickListener(v -> onOpenDoorClicked());
 
-        // Check status periodic la pornire
         checkServerStatus();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Re-check status cand reintri pe tab Home
         checkServerStatus();
     }
 
     /**
-     * Verifica starea ESP32-ului prin /api/status.
-     * Actualizeaza indicatorul vizual de conexiune.
+     verifica starea esp32ului prin /api/status.
      */
     private void checkServerStatus() {
         statusText.setText("Verificare conexiune...");
@@ -120,7 +116,6 @@ public class HomeFragment extends Fragment {
                             statusDot.setBackgroundColor(0xFF43A047); // verde
                             btnOpenDoor.setEnabled(true);
 
-                            // Parse enrolled count din status
                             try {
                                 org.json.JSONObject json = new org.json.JSONObject(body);
                                 int enrolled = json.optInt("enrolled_devices", 0);
@@ -130,7 +125,7 @@ public class HomeFragment extends Fragment {
                                 String deviceLine = String.format(Locale.US,
                                         "Telefoane inrolate: %d / %d%s",
                                         enrolled, maxDev,
-                                        enrollOpen ? " · 🟡 Enrollment activ" : "");
+                                        enrollOpen ? "Enrollment activ" : "");
                                 deviceInfoText.setText(deviceLine);
                             } catch (Exception e) {
                                 deviceInfoText.setText("Telefon: -");
@@ -152,13 +147,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    /**
-     * Apasare pe butonul mare "Deschide usa".
-     */
     private void onOpenDoorClicked() {
         if (!keyManager.keyExists()) {
             Toast.makeText(requireContext(),
-                    "Cheia nu exista! Mergi in Setup si apasa 'Regenereaza cheia'.",
+                    "Cheia nu exista. Mergi in Setup si apasa 'Regenereaza cheia'.",
                     Toast.LENGTH_LONG).show();
             return;
         }
@@ -197,11 +189,9 @@ public class HomeFragment extends Fragment {
         } else {
             resultStatus.setText("ACCES RESPINS");
             resultStatus.setTextColor(0xFFC62828);
-            // Motivul pe linia 2
             String reasonHuman = humanizeReason(result.reason);
             resultStatus.append("\n");
             TextView extra = new TextView(requireContext());
-            // de fapt scoatem newline-ul, folosim resultTime pentru motiv
         }
 
         String now = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
@@ -211,7 +201,6 @@ public class HomeFragment extends Fragment {
             resultTime.setText("La " + now + " · " + humanizeReason(result.reason));
         }
 
-        // Latente defalcate
         String latencyText = String.format(Locale.US,
                 "Total:     %d ms\nChallenge: %d ms\nSemnare:   %d ms (TEE)\nOpen:      %d ms",
                 result.totalTimeMs,
@@ -223,14 +212,13 @@ public class HomeFragment extends Fragment {
 
     private void displayError(Exception e) {
         resultCard.setVisibility(View.VISIBLE);
-        resultStatus.setText("⚠ Eroare conexiune");
+        resultStatus.setText("Eroare conexiune");
         resultStatus.setTextColor(0xFFC62828);
         String now = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
         resultTime.setText("La " + now);
         resultLatency.setText(e.getClass().getSimpleName() + "\n" +
                 (e.getMessage() != null ? e.getMessage() : ""));
 
-        // Refresh statusul
         checkServerStatus();
     }
 

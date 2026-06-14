@@ -22,20 +22,6 @@ public class HexUtils {
     }
 
     /**
-     byte array in string hex pretty
-     */
-    public static String bytesToHexPretty(byte[] bytes) {
-        if (bytes == null) return "null";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; i++) {
-            if (i > 0 && i % 16 == 0) sb.append("\n");
-            else if (i > 0) sb.append(" ");
-            sb.append(String.format("%02X", bytes[i] & 0xFF));
-        }
-        return sb.toString();
-    }
-
-    /**
      converteste hex in byte array
      */
     public static byte[] hexToBytes(String hex) {

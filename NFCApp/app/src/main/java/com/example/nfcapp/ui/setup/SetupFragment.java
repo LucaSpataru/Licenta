@@ -89,11 +89,10 @@ public class SetupFragment extends Fragment {
         refreshEnrollStatus();
     }
 
-    // ═════════════════ URL ═════════════════
     private void saveAndTestUrl() {
         String url = etEsp32Url.getText().toString().trim();
         if (url.isEmpty()) {
-            Toast.makeText(requireContext(), "Introdu URL!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Introdu URL", Toast.LENGTH_SHORT).show();
             return;
         }
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -120,7 +119,7 @@ public class SetupFragment extends Fragment {
                     final String body = resp.body() != null ? resp.body().string() : "";
                     mainHandler.post(() -> {
                         if (ok) {
-                            urlTestResult.setText("Conexiune OK · HTTP 200");
+                            urlTestResult.setText("Conexiune OK - HTTP 200");
                             urlTestResult.setTextColor(0xFF2E7D32);
                             refreshEnrollStatus();
                         } else {
@@ -131,7 +130,7 @@ public class SetupFragment extends Fragment {
                 }
             } catch (Exception e) {
                 mainHandler.post(() -> {
-                    urlTestResult.setText("✗ " + e.getClass().getSimpleName() + " — verifica WiFi + IP");
+                    urlTestResult.setText("Eroare: " + e.getClass().getSimpleName() + " — verifica WiFi + IP");
                     urlTestResult.setTextColor(0xFFC62828);
                 });
             }
@@ -186,7 +185,6 @@ public class SetupFragment extends Fragment {
         }
     }
 
-    // ═════════════════ Enrollment ═════════════════
     private void refreshEnrollStatus() {
         enrollStatusText.setText("Verific status server...");
         String url = prefs.getEsp32Url();
@@ -227,7 +225,7 @@ public class SetupFragment extends Fragment {
 
     private void enrollDevice() {
         if (!keyManager.keyExists()) {
-            Toast.makeText(requireContext(), "Genereaza cheia mai intai!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Genereaza cheia mai intai", Toast.LENGTH_SHORT).show();
             return;
         }
         String url = prefs.getEsp32Url();

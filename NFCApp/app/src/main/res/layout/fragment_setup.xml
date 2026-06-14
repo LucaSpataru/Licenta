@@ -22,7 +22,6 @@
             android:paddingTop="16dp"
             android:paddingBottom="16dp" />
 
-        <!-- ════════ CARD: ESP32 URL ════════ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -74,7 +73,6 @@
 
         </LinearLayout>
 
-        <!-- ════════ CARD: Cheie criptografica ════════ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -123,12 +121,10 @@
                 android:layout_height="wrap_content"
                 android:text="Regenerarea cheii necesita reinrolarea telefonului la ESP32"
                 android:textSize="11sp"
-                android:textColor="#E65100"
                 android:paddingTop="6dp" />
 
         </LinearLayout>
 
-        <!-- ════════ CARD: Enrollment ════════ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -175,9 +171,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Inrolarea se face cand fereastra e deschisa (apasa BOOT pe ESP32 sau prima pornire). Galben clipeste pe ESP32."
+                android:text="Inrolarea se face cand fereastra e deschisa"
                 android:textSize="11sp"
-                android:textColor="#0277BD"
                 android:paddingTop="6dp" />
 
         </LinearLayout>
