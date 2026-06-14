@@ -19,23 +19,16 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * Client HTTP pentru comunicarea cu ESP32-ul de control acces.
- *
- * Flow:
- *   1. requestChallenge() → GET /api/challenge → primeste nonce
- *   2. Telefonul construieste mesaj (nonce + door_id + action)
- *   3. Telefonul semneaza mesajul cu ChallengeSigner (cheia TEE)
- *   4. openDoor() → POST /api/open cu mesaj + semnatura
- *   5. ESP32 verifica ECDSA si raspunde granted/denied
- *
- * Refoloseste acelasi ChallengeSigner ca AccessHceService (NFC).
- * Un singur mecanism criptografic, doua transporturi.
+ client http pentru comunicarea cu esp32ul de control acces.
+   1. requestChallenge() - GET /api/challenge - primeste nonce
+   2. telefonul construieste mesaj
+   3. telefonul semneaza mesajul cu ChallengeSigner
+   4. openDoor() - POST /api/open cu mesaj + semnatura
+   5. esp32 verifica ecdsa si raspunde granted/denied
  */
 public class DoorApiClient {
-
     private static final String TAG = "DoorApiClient";
     private static final MediaType JSON_MEDIA = MediaType.parse("application/json");
-
     private final String baseUrl;
     private final ChallengeSigner signer;
     private final OkHttpClient http;
@@ -53,19 +46,18 @@ public class DoorApiClient {
     }
 
     /**
-     * Rezultatul unei tentative de deschidere.
+     rezultatul unei intentii de deschidere
      */
     public static class Result {
         public final boolean success;
-        public final String status;       // "granted" sau "denied"
-        public final String reason;       // motiv daca denied
+        public final String status;
+        public final String reason;
         public final long totalTimeMs;
         public final long challengeTimeMs;
         public final long signTimeMs;
         public final long openTimeMs;
         public final String nonceHex;
         public final String signatureHex;
-
         public Result(boolean success, String status, String reason,
                       long totalTimeMs, long challengeTimeMs, long signTimeMs, long openTimeMs,
                       String nonceHex, String signatureHex) {
@@ -80,15 +72,10 @@ public class DoorApiClient {
             this.signatureHex = signatureHex;
         }
     }
-
-    /**
-     * Flow complet de deschidere usa.
-     * RULEAZA PE BACKGROUND THREAD! Operatiile sunt blocante.
-     */
     public Result openDoor(int doorId, byte action) throws Exception {
         long t0 = System.currentTimeMillis();
 
-        // ============ Pas 1: GET challenge ============
+        //GET challenge
         long tChStart = System.currentTimeMillis();
         Request challengeReq = new Request.Builder()
                 .url(baseUrl + "/api/challenge")
@@ -111,7 +98,7 @@ public class DoorApiClient {
         }
         long tChEnd = System.currentTimeMillis();
 
-        // ============ Pas 2: build message + sign ============
+        //build message + sign
         long tSigStart = System.currentTimeMillis();
         byte[] message = ChallengeSigner.buildMessage(nonce, doorId, action);
         byte[] signature = signer.sign(message);
@@ -120,9 +107,9 @@ public class DoorApiClient {
         Log.i(TAG, "Mesaj: " + HexUtils.bytesToHex(message));
         Log.i(TAG, "Semnatura (" + signature.length + "B): " + HexUtils.bytesToHex(signature));
 
-        // ============ Pas 3: POST /api/open ============
+        //POST /api/open
         long tOpenStart = System.currentTimeMillis();
-        // Calculeaza keyId-ul (identic cu cel din ESP32 keyStore)
+        //calculeaza keyIdul
         byte[] keyId = signer.getKeyManager().getKeyId();
 
         JSONObject payload = new JSONObject();
