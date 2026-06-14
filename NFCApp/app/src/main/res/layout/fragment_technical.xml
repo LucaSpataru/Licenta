@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FAFAFA"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Detalii tehnice"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#212121"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pentru debug si demonstratii"
+        android:textSize="12sp"
+        android:textColor="#9E9E9E"
+        android:paddingBottom="16dp" />
+
+    <!-- Grid 2x2 cu butoane -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnKeyDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Detalii cheie"
+            android:textSize="13sp"
+            android:backgroundTint="#5C6BC0"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnSimulateNfc"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Simuleaza NFC"
+            android:textSize="13sp"
+            android:backgroundTint="#26A69A"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="4dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnAttackTest"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Test atac"
+            android:textSize="13sp"
+            android:backgroundTint="#EF5350"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnExport"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Export hex"
+            android:textSize="13sp"
+            android:backgroundTint="#8D6E63"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="4dp" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnClearLog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Curata log"
+        android:textSize="12sp"
+        android:backgroundTint="#9E9E9E"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Output:"
+        android:textSize="12sp"
+        android:textColor="#9E9E9E"
+        android:textAllCaps="true"
+        android:paddingTop="16dp"
+        android:paddingBottom="4dp" />
+
+    <ScrollView
+        android:id="@+id/logScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFFFFF"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/logOutput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apasa un buton pentru a vedea output-ul..."
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textColor="#424242"
+            android:textIsSelectable="true" />
+
+    </ScrollView>
+
+</LinearLayout>

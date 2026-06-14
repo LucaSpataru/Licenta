@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">NFCApp</string>
+    <string name="hce_service_description">Serviciu de control acces Nfc</string>
+    <string name="hce_aid_group_description">Aplicatie de acces Nfc</string>"
+</resources>
