@@ -11,54 +11,40 @@ import com.example.nfcapp.util.HexUtils;
 import java.util.Arrays;
 
 /**
- * Service HCE care implementeaza protocolul de autentificare prin NFC.
- *
- * Flow:
- *   1. SELECT AID            — raspuns: 9000
- *   2. GET CHALLENGE (Data=nonce 32B)  — raspuns: keyId (16B) + 9000
- *   3. SIGN CHALLENGE (Data=msg 37B)   — raspuns: signature DER (~70-72B) + 9000
- *
- * State machine:
- *   IDLE → AID_SELECTED → CHALLENGE_RECEIVED → SIGNED
- *   (orice abatere de la secventa → 6985 Conditions not satisfied)
+ service hce pentru partea de autentificare nfc
+ select aid - raspuns 9000
+ get challenge - raspuns keyId + 9000
+ sign challenge - raspuns signature + 9000
  */
 public class AccessHceService extends HostApduService {
     private static final String TAG = "AccessHceService";
 
-    /** Starile posibile ale conversatiei NFC. */
+    //stariile pentru procesul nfc
     private enum State { IDLE, AID_SELECTED, CHALLENGE_RECEIVED }
     private State state = State.IDLE;
 
-    /** Ne tinem minte nonce-ul primit intre GET CHALLENGE si SIGN CHALLENGE. */
+    //nonceul primit in sesiunea respectiva
     private byte[] currentNonce = null;
 
-    /** Lazy init — instantiate la primul APDU, ca service-ul sa porneasca rapid. */
+    //keyManager si ChallengeSigner sunt folosite pentru semnare si autentificare
     private KeyManager keyManager;
     private ChallengeSigner signer;
 
     @Override
     public byte[] processCommandApdu(byte[] commandApdu, Bundle extras) {
-        Log.e(TAG, "════════════════════════════════════════");
-        Log.e(TAG, "processCommandApdu APELAT! Length: " + commandApdu.length);
-        Log.e(TAG, "Bytes: " + HexUtils.bytesToHex(commandApdu));
-        Log.e(TAG, "════════════════════════════════════════");
-
-        Log.i(TAG, "─── APDU primit (" + commandApdu.length + "B): "
-                + HexUtils.bytesToHex(commandApdu));
+        Log.i(TAG, "APDU primit (" + commandApdu.length + "B): " + HexUtils.bytesToHex(commandApdu));
 
         if (commandApdu.length < 4) {
             return logAndReturn(ApduCommands.SW_WRONG_LENGTH);
         }
 
-        // Lazy init
         if (keyManager == null) {
             keyManager = new KeyManager();
             signer = new ChallengeSigner(keyManager);
         }
 
-        // Verificare: cheia trebuie sa fie generata
         if (!keyManager.keyExists()) {
-            Log.e(TAG, "Cheia nu e generata! Genereaza-o din UI intai.");
+            Log.e(TAG, "Cheia nu e generata. Trebuie generata din UI.");
             return logAndReturn(ApduCommands.SW_CONDITIONS_NOT_SATISFIED);
         }
 
@@ -88,13 +74,12 @@ public class AccessHceService extends HostApduService {
             return logAndReturn(ApduCommands.SW_INS_NOT_SUPPORTED);
 
         } catch (Exception e) {
-            Log.e(TAG, "Eroare interna la procesare APDU", e);
+            Log.e(TAG, "Eroare la procesare APDU", e);
             return logAndReturn(ApduCommands.SW_INTERNAL_ERROR);
         }
     }
-
-    // ==================== HANDLERS ====================
-
+    //functii pentru comanda apdu
+    //handle select
     private byte[] handleSelect(byte[] apdu) {
         if (apdu.length < 5) return logAndReturn(ApduCommands.SW_WRONG_LENGTH);
         int lc = apdu[4] & 0xFF;
@@ -110,15 +95,14 @@ public class AccessHceService extends HostApduService {
 
         state = State.AID_SELECTED;
         currentNonce = null;
-        Log.i(TAG, "✓ AID selectat, state=AID_SELECTED");
+        Log.i(TAG, "AID selectat, state=AID_SELECTED");
         return logAndReturn(ApduCommands.SW_SUCCESS);
     }
 
     /**
-     * GET CHALLENGE: reader-ul trimite un nonce de 32B, telefonul raspunde cu KeyId.
-     *
-     * Format command:  80 10 00 00 20 <nonce 32B>
-     * Format response: <keyId 16B> 90 00
+     GET CHALLENGE: reader trimite un nonce de 32B, telefonul raspunde cu KeyId.
+     format command:  80 10 00 00 20 nonce
+     format response: keyId 90 00
      */
     private byte[] handleGetChallenge(byte[] apdu) throws Exception {
         if (state != State.AID_SELECTED && state != State.CHALLENGE_RECEIVED) {
@@ -127,10 +111,8 @@ public class AccessHceService extends HostApduService {
         }
 
         // Format asteptat: CLA INS P1 P2 Lc Data
-        // Lc trebuie = 32 (NONCE_LENGTH)
         if (apdu.length < 5 + ChallengeSigner.NONCE_LENGTH) {
-            Log.w(TAG, "GET CHALLENGE: APDU prea scurt, primit " + apdu.length
-                    + "B, asteptat " + (5 + ChallengeSigner.NONCE_LENGTH));
+            Log.w(TAG, "GET CHALLENGE: APDU prea scurt, primit " + apdu.length + ", asteptat " + (5 + ChallengeSigner.NONCE_LENGTH));
             return logAndReturn(ApduCommands.SW_WRONG_LENGTH);
         }
         int lc = apdu[4] & 0xFF;
@@ -150,14 +132,9 @@ public class AccessHceService extends HostApduService {
     }
 
     /**
-     * SIGN CHALLENGE: reader trimite mesajul complet (37B), telefonul raspunde cu signature.
-     *
-     * Format command:  80 20 00 00 25 <message 37B>
-     * Format response: <signature DER ~70-72B> 90 00
-     *
-     * IMPORTANT: verificam ca primii 32B din message sunt EXACT nonce-ul primit anterior.
-     * Asta previne ca reader-ul (sau un atacator MITM) sa ne ceara sa semnam un nonce
-     * diferit decat cel pe care l-am acceptat.
+     SIGN CHALLENGE: reader trimite mesajul complet, telefonul raspunde cu signature.
+     format command:  80 20 00 00 25 message
+     format response: DER signature 90 00
      */
     private byte[] handleSignChallenge(byte[] apdu) throws Exception {
         if (state != State.CHALLENGE_RECEIVED) {
@@ -177,10 +154,10 @@ public class AccessHceService extends HostApduService {
         byte[] message = Arrays.copyOfRange(apdu, 5, 5 + ChallengeSigner.MESSAGE_LENGTH);
         Log.i(TAG, "Mesaj de semnat: " + HexUtils.bytesToHex(message));
 
-        // Validare: primii 32B din message trebuie sa fie nonce-ul primit anterior
+        // primii 32B din message trebuie sa fie nonceul primit anterior
         byte[] noncePart = Arrays.copyOfRange(message, 0, ChallengeSigner.NONCE_LENGTH);
         if (!Arrays.equals(noncePart, currentNonce)) {
-            Log.e(TAG, "Nonce din mesaj NU se potriveste cu cel primit la GET CHALLENGE!");
+            Log.e(TAG, "Nonce din mesaj nu se potriveste cu cel primit la GET CHALLENGE!");
             Log.e(TAG, "  Asteptat: " + HexUtils.bytesToHex(currentNonce));
             Log.e(TAG, "  Primit:   " + HexUtils.bytesToHex(noncePart));
             return logAndReturn(ApduCommands.SW_CONDITIONS_NOT_SATISFIED);
@@ -189,20 +166,18 @@ public class AccessHceService extends HostApduService {
         long start = System.nanoTime();
         byte[] signature = signer.sign(message);
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
-        Log.i(TAG, "✓ Semnatura generata in " + elapsedMs + " ms ("
-                + signature.length + "B): " + HexUtils.bytesToHex(signature));
+        Log.i(TAG, "Semnatura generata in " + elapsedMs + " ms (" + signature.length + "B): " + HexUtils.bytesToHex(signature));
 
-        // Reset state — sesiunea s-a incheiat, urmatoarea va trebui sa reia de la AID
+        //sesiunea s-a incheiat, urmatoarea va trebui sa reia de la AID
         state = State.AID_SELECTED;
         currentNonce = null;
 
         return logAndReturn(ApduCommands.response(signature, ApduCommands.SW_SUCCESS));
     }
 
-    // ==================== HELPERS ====================
-
+    //functii ajutatoare
     private byte[] logAndReturn(byte[] response) {
-        Log.i(TAG, "→ Raspuns (" + response.length + "B): " + HexUtils.bytesToHex(response));
+        Log.i(TAG, "Raspuns (" + response.length + "B): " + HexUtils.bytesToHex(response));
         return response;
     }
 
