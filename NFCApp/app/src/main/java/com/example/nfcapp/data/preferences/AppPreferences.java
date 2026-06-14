@@ -4,8 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 /**
- * Stocare persistenta a configuratiei aplicatiei.
- * Folosim SharedPreferences (XML simplu, gestionat de Android).
+ stocare a configuratiei aplicatiei.
  */
 public class AppPreferences {
 
@@ -21,7 +20,7 @@ public class AppPreferences {
     }
 
     /**
-     * Returneaza URL-ul ESP32 stocat, sau valoarea default daca nu exista.
+     returneaza URL-ul ESP32 stocat sau valoarea default daca nu exista.
      */
     public String getEsp32Url() {
         return prefs.getString(KEY_ESP32_URL, "http://192.168.1.123");

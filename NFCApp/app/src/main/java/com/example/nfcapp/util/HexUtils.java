@@ -1,15 +1,14 @@
 package com.example.nfcapp.util;
 
 /**
- * Utilitare pentru conversie intre byte arrays si reprezentare hexazecimala.
+ conversie byte arrays - hexadecimal
  */
 public class HexUtils {
 
     private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
 
     /**
-     * Converteste byte array in string hex, fara separatori.
-     * Ex: [0xAB, 0xCD] → "ABCD"
+     converteste byte array in string hex
      */
     public static String bytesToHex(byte[] bytes) {
         if (bytes == null) return "null";
@@ -23,8 +22,7 @@ public class HexUtils {
     }
 
     /**
-     * Converteste byte array in string hex grupat pe cate 16 bytes pe linie,
-     * cu spatii intre bytes — pentru afisare lizibila in UI.
+     byte array in string hex pretty
      */
     public static String bytesToHexPretty(byte[] bytes) {
         if (bytes == null) return "null";
@@ -38,22 +36,20 @@ public class HexUtils {
     }
 
     /**
-     * Converteste string hex in byte array.
-     * Ex: "ABCD" → [0xAB, 0xCD]
-     * Accepta litere mari sau mici. Nu accepta separatori.
+     converteste hex in byte array
      */
     public static byte[] hexToBytes(String hex) {
         if (hex == null) throw new IllegalArgumentException("hex e null");
-        hex = hex.replaceAll("\\s+", ""); // toleram spatii
+        hex = hex.replaceAll("\\s+", "");
         if (hex.length() % 2 != 0) {
-            throw new IllegalArgumentException("String hex cu lungime impara: " + hex.length());
+            throw new IllegalArgumentException("lungime impara: " + hex.length());
         }
         byte[] result = new byte[hex.length() / 2];
         for (int i = 0; i < result.length; i++) {
             int hi = Character.digit(hex.charAt(i * 2), 16);
             int lo = Character.digit(hex.charAt(i * 2 + 1), 16);
             if (hi < 0 || lo < 0) {
-                throw new IllegalArgumentException("Caracter non-hex in pozitia " + (i * 2));
+                throw new IllegalArgumentException("caracter non-hex in pozitia " + (i * 2));
             }
             result[i] = (byte) ((hi << 4) | lo);
         }
