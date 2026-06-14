@@ -7,7 +7,7 @@
     <aid-group
         android:description="@string/hce_aid_group_description"
         android:category="other">
-        <!-- AID custom: F0 01 02 03 04 05 06 (7 bytes, range proprietar) -->
+        <!-- AID: F0 01 02 03 04 05 06 - F0 - range proprietar -->
         <aid-filter android:name="F0010203040506" />
     </aid-group>
 
